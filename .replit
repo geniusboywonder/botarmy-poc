@@ -3,6 +3,7 @@ modules = ["nodejs-18", "python-3.11"]
 
 [nix]
 channel = "stable-23.05"
+packages = ["libxcrypt"]
 
 [unitTest]
 language = "python3"

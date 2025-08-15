@@ -19,10 +19,7 @@
     "react": "^19.1.1",
     "react-dom": "^19.1.1",
     "vite": "^7.1.2"
-  }
-}
-
-{
+  },
   "name": "botarmy-poc-frontend",
   "version": "1.0.0",
   "scripts": {
