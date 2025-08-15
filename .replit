@@ -1,5 +1,5 @@
 entrypoint = "main.py"
-modules = ["python-3.11"]
+modules = ["nodejs-18", "python-3.11"]
 
 [nix]
 channel = "stable-23.05"
@@ -11,9 +11,13 @@ language = "python3"
 requiredFiles = [".replit", "replit.nix"]
 
 [deployment]
-run = ["python3", "main.py"]
+run = ["sh", "-c", "cd /home/runner/botarmy-poc && python main.py"]
 deploymentTarget = "cloudrun"
 
 [[ports]]
 localPort = 8000
 externalPort = 80
+
+[env]
+PYTHONPATH = "/home/runner/botarmy-poc"
+NODE_ENV = "production"
