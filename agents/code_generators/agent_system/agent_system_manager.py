@@ -772,10 +772,21 @@ class AgentSystemManager(BaseManager):
     
     def __init__(self, llm_client=None, logger=None):
         super().__init__('Agent System', llm_client, logger)
+        
+        # Import specialized agent generators
+        from .analyst_agent_generator_WIP_20250817_203417 import AnalystAgentGenerator
+        from .architect_agent_generator_WIP_20250817_203417 import ArchitectAgentGenerator
+        from .architect_agent_generator_WIP_20250817_203417 import DeveloperAgentGenerator
+        from .complete_tester_agent_WIP_20250817_204519 import TesterAgentGenerator
+        
         self.generators = {
             'base_agent': BaseAgentClassGenerator(self),
             'agent_registry': AgentRegistryGenerator(self),
-            'agent_manager': AgentManagerGenerator(self)
+            'agent_manager': AgentManagerGenerator(self),
+            'analyst_agent': AnalystAgentGenerator(self),
+            'architect_agent': ArchitectAgentGenerator(self),
+            'developer_agent': DeveloperAgentGenerator(self),
+            'tester_agent': TesterAgentGenerator(self)
         }
     
     async def generate_module(self, module_name: str, specifications: Dict[str, Any]) -> str:
@@ -808,10 +819,79 @@ class AgentSystemManager(BaseManager):
         return {
             'base_agent': [],
             'agent_registry': ['base_agent'],
-            'agent_manager': ['base_agent', 'agent_registry']
+            'agent_manager': ['base_agent', 'agent_registry'],
+            'analyst_agent': ['base_agent'],
+            'architect_agent': ['base_agent'],
+            'developer_agent': ['base_agent'],
+            'tester_agent': ['base_agent']
         }
     
     def validate_specifications(self, specifications: Dict[str, Any]) -> bool:
         """Validate agent system specifications."""
-        required_keys = ['agent_types', 'workflow_stages']
-        return all(key in specifications for key in required_keys)
+        # Basic validation - accept any dict for POC
+        return isinstance(specifications, dict)
+    
+    def get_generation_order(self) -> List[str]:
+        """Get recommended generation order based on dependencies."""
+        return [
+            'base_agent',
+            'agent_registry',
+            'agent_manager', 
+            'analyst_agent',
+            'architect_agent',
+            'developer_agent',
+            'tester_agent'
+        ]
+    
+    async def generate_complete_system(self, specifications: Dict[str, Any]) -> Dict[str, str]:
+        """Generate complete agent system with all components."""
+        
+        self.logger.info("Starting complete agent system generation")
+        
+        modules = {}
+        generation_order = self.get_generation_order()
+        
+        for module_name in generation_order:
+            try:
+                self.logger.info(f"Generating {module_name}")
+                content = await self.generate_module(module_name, specifications)
+                modules[f"agents/{module_name}.py"] = content
+                self.stats['modules_generated'] += 1
+                
+            except Exception as e:
+                self.logger.error(f"Failed to generate {module_name}: {e}")
+                fallback = self.generators[module_name].get_fallback_template()
+                modules[f"agents/{module_name}.py"] = fallback
+                self.stats['generation_errors'] += 1
+        
+        # Generate __init__.py for the agents package
+        modules["agents/__init__.py"] = self._generate_agents_init()
+        
+        self.logger.info(f"Agent system generation complete: {self.stats['modules_generated']} modules")
+        return modules
+    
+    def _generate_agents_init(self) -> str:
+        """Generate __init__.py for agents package."""
+        return '''"""BotArmy Agent System - AI-powered software development agents."""
+
+from .base_agent import BaseAgent, AgentStatus
+from .agent_registry import AgentRegistry
+from .agent_manager import AgentManager
+from .analyst_agent import AnalystAgent
+from .architect_agent import ArchitectAgent
+from .developer_agent import DeveloperAgent
+from .tester_agent import TesterAgent
+
+__all__ = [
+    'BaseAgent',
+    'AgentStatus', 
+    'AgentRegistry',
+    'AgentManager',
+    'AnalystAgent',
+    'ArchitectAgent',
+    'DeveloperAgent',
+    'TesterAgent'
+]
+
+__version__ = '1.0.0'
+'''
