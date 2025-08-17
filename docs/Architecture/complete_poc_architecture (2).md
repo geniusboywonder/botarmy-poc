@@ -30,12 +30,14 @@ The architecture eliminates over-engineering while maintaining core functionalit
 The BotArmy POC follows a simplified three-tier architecture:
 
 **Presentation Tier:**
+
 - React SPA with Tailwind CSS
 - 5 core components: Dashboard, AgentPanel, ActionQueue, ProjectViewer, StatusBar
 - Real-time updates via Server-Sent Events
 - State management with React Context + localStorage
 
 **Application Tier:**
+
 - FastAPI backend with async support
 - 4 AI agents: Analyst, Architect, Developer, Tester
 - Sequential workflow orchestration
@@ -43,6 +45,7 @@ The BotArmy POC follows a simplified three-tier architecture:
 - SQLite-based message queue
 
 **Data Tier:**
+
 - SQLite database for persistent storage
 - JSONL files for audit logging
 - File system storage for generated artifacts
@@ -67,6 +70,7 @@ The BotArmy POC follows a simplified three-tier architecture:
 **Rationale:** Replit provides integrated development, hosting, and database capabilities in a single free platform.
 
 **Capabilities:**
+
 - Code editor with collaborative features
 - Built-in web hosting with custom domains
 - Integrated SQLite database
@@ -75,12 +79,14 @@ The BotArmy POC follows a simplified three-tier architecture:
 - Git integration and version control
 
 **Resource Limits:**
+
 - 0.5 vCPU, 512MB RAM on free tier
 - 1GB persistent storage
 - 100GB bandwidth per month
 - Always-on requires boost credits
 
 **Configuration:**
+
 - Main application entry: `main.py`
 - Static files served from `/static` directory
 - Environment variables in Replit secrets
@@ -89,17 +95,20 @@ The BotArmy POC follows a simplified three-tier architecture:
 ### 2.2 Alternative Platforms
 
 **Railway.app (Recommended Alternative):**
+
 - $5/month after free trial
 - Better performance and reliability
 - PostgreSQL database included
 - Automatic deployments from Git
 
 **Cloudflare Workers + D1:**
+
 - Generous free tier
 - Global edge deployment
 - Requires serverless architecture adaptation
 
 **Local Development:**
+
 - Docker Compose setup for development
 - Matches production environment
 - Easy switching between platforms
@@ -107,11 +116,13 @@ The BotArmy POC follows a simplified three-tier architecture:
 ### 2.3 Domain and SSL
 
 **Replit Domains:**
+
 - Free subdomain: `botarmy.username.repl.co`
 - Custom domain support with boost
 - Automatic SSL certificates
 
 **DNS Configuration:**
+
 - A record pointing to Replit IP
 - CNAME for subdomain routing
 - TTL settings for development flexibility
@@ -134,24 +145,28 @@ main.py                 # Application entry point and routing
 **Core Services:**
 
 **Agent Service (`agents/`):**
+
 - Base agent class with common functionality
 - Individual agent implementations
 - Prompt template management
 - Token usage tracking
 
 **Workflow Service (`workflow/`):**
+
 - Sequential pipeline orchestration
 - State management and transitions
 - Error handling and recovery
 - Progress tracking
 
 **Database Service (`database.py`):**
+
 - SQLite connection management
 - CRUD operations for all entities
 - Migration and schema management
 - Backup and recovery utilities
 
 **LLM Service (`llm_client.py`):**
+
 - OpenAI API client wrapper
 - Retry logic with exponential backoff
 - Token counting and cost tracking
@@ -165,35 +180,41 @@ main.py                 # Application entry point and routing
 **Purpose:** Real-time updates to frontend without WebSocket complexity
 
 **Event Types:**
+
 - `agent_status`: Agent execution progress
 - `message_new`: New messages in conversation
 - `conflict_detected`: Human intervention required
 - `project_complete`: Final deliverables ready
 
 **Client Reconnection:**
+
 - Automatic reconnection on connection loss
 - Event ID tracking for missed messages
 - Exponential backoff for failed connections
 
 **Fallback Options:**
+
 - Long polling for environments without SSE support
 - WebSocket upgrade path for production environments
 
 ### 3.3 Error Handling and Recovery
 
 **Agent Failure Handling:**
+
 - Maximum 3 retry attempts per agent
 - Exponential backoff: 2^attempt seconds
 - Human escalation after max retries
 - State preservation across failures
 
 **API Error Handling:**
+
 - OpenAI API rate limit handling
 - Network timeout management
 - Graceful degradation for non-critical features
 - Error logging and alerting
 
 **Database Error Handling:**
+
 - Connection retry logic
 - Transaction rollback on failures
 - Database corruption recovery
@@ -211,12 +232,14 @@ main.py                 # Application entry point and routing
 6. **Delivery:** Packages final deliverables for download
 
 **State Transitions:**
+
 - Each agent updates workflow state upon completion
 - Failed transitions trigger error handling
 - Human approval points at critical stages
 - Audit trail for all state changes
 
 **Conflict Resolution:**
+
 - Detect disagreements between agents
 - Queue for human review and decision
 - Resume workflow with human input
@@ -240,6 +263,7 @@ App.jsx                 # Root component with context providers
 ```
 
 **Design System:**
+
 - Tailwind CSS for styling
 - Responsive design with mobile-first approach
 - Consistent color scheme and typography
@@ -250,6 +274,7 @@ App.jsx                 # Root component with context providers
 **React Context + localStorage Pattern:**
 
 **Global State Structure:**
+
 ```javascript
 {
   project: {
@@ -275,6 +300,7 @@ App.jsx                 # Root component with context providers
 ```
 
 **Persistence Strategy:**
+
 - localStorage for session persistence
 - Automatic state synchronization
 - Cleanup of old sessions
@@ -283,30 +309,35 @@ App.jsx                 # Root component with context providers
 ### 4.3 User Interface Components
 
 **Dashboard Component:**
+
 - Grid layout with responsive breakpoints
 - Sidebar navigation with agent status
 - Main content area with active views
 - Real-time status indicators
 
 **AgentPanel Component:**
+
 - Agent avatar and status badge
 - Conversation history display
 - Progress indicators and metrics
 - Error states and retry options
 
 **ActionQueue Component:**
+
 - Pending human interventions list
 - Action details and context
 - Approve/reject/modify options
 - History of resolved actions
 
 **ProjectViewer Component:**
+
 - Requirements display and editing
 - File tree with generated code
 - Download and export options
 - Version history and comparisons
 
 **StatusBar Component:**
+
 - System health indicators
 - Token usage and cost tracking
 - Performance metrics
@@ -319,6 +350,7 @@ App.jsx                 # Root component with context providers
 **SQLite Database Structure:**
 
 **projects table:**
+
 - id (PRIMARY KEY)
 - requirements (TEXT)
 - status (TEXT)
@@ -327,6 +359,7 @@ App.jsx                 # Root component with context providers
 - metadata (JSON)
 
 **messages table:**
+
 - id (PRIMARY KEY)
 - project_id (FOREIGN KEY)
 - from_agent (TEXT)
@@ -337,6 +370,7 @@ App.jsx                 # Root component with context providers
 - processed_at (TIMESTAMP)
 
 **agents table:**
+
 - id (PRIMARY KEY)
 - project_id (FOREIGN KEY)
 - agent_type (TEXT)
@@ -347,6 +381,7 @@ App.jsx                 # Root component with context providers
 - completed_at (TIMESTAMP)
 
 **conflicts table:**
+
 - id (PRIMARY KEY)
 - project_id (FOREIGN KEY)
 - description (TEXT)
@@ -357,6 +392,7 @@ App.jsx                 # Root component with context providers
 - resolved_at (TIMESTAMP)
 
 **files table:**
+
 - id (PRIMARY KEY)
 - project_id (FOREIGN KEY)
 - filename (TEXT)
@@ -368,18 +404,21 @@ App.jsx                 # Root component with context providers
 ### 5.2 File Storage
 
 **Generated Code Files:**
+
 - Path: `/data/projects/{project_id}/code/`
 - Structure mirrors agent-generated file hierarchy
 - Version control for file changes
 - Compression for large projects
 
 **Uploaded Documents:**
+
 - Path: `/data/projects/{project_id}/uploads/`
 - Support for common formats (PDF, DOCX, TXT, MD)
 - Automatic text extraction and indexing
 - File size limits and validation
 
 **Audit Logs:**
+
 - Path: `/data/logs/audit_{date}.jsonl`
 - One log entry per agent action
 - Daily rotation with compression
@@ -388,12 +427,14 @@ App.jsx                 # Root component with context providers
 ### 5.3 Backup and Recovery
 
 **Automated Backups:**
+
 - Daily SQLite database snapshots
 - File system backup to external storage
 - Log rotation and archival
 - Recovery point objectives
 
 **Recovery Procedures:**
+
 - Database corruption recovery
 - File system restoration
 - Partial recovery from logs
@@ -406,12 +447,14 @@ App.jsx                 # Root component with context providers
 **Common Agent Interface:**
 
 **Core Methods:**
+
 - `initialize()`: Setup agent state and configuration
 - `process(input_data)`: Execute agent-specific logic
 - `validate(output)`: Verify output quality and format
 - `cleanup()`: Resource cleanup and state persistence
 
 **Shared Capabilities:**
+
 - OpenAI API integration
 - Token usage tracking
 - Error handling and recovery
@@ -419,6 +462,7 @@ App.jsx                 # Root component with context providers
 - Conflict detection
 
 **Configuration Management:**
+
 - Agent-specific prompts and templates
 - Model selection and parameters
 - Resource limits and quotas
@@ -429,18 +473,21 @@ App.jsx                 # Root component with context providers
 **Primary Function:** Convert natural language requirements into structured user stories and technical specifications.
 
 **Input Processing:**
+
 - Parse unstructured requirement documents
 - Extract key functional and non-functional requirements
 - Identify stakeholders and user personas
 - Detect ambiguities requiring clarification
 
 **Output Generation:**
+
 - Structured user stories with acceptance criteria
 - Technical constraints and assumptions
 - Risk assessment and mitigation strategies
 - Recommendation for technical approach
 
 **Quality Validation:**
+
 - Completeness check against input requirements
 - Consistency validation across user stories
 - Technical feasibility assessment
@@ -451,6 +498,7 @@ App.jsx                 # Root component with context providers
 **Primary Function:** Create technical design and system architecture based on analyzed requirements.
 
 **Design Activities:**
+
 - System architecture and component design
 - Technology stack selection and justification
 - Database schema and data model design
@@ -458,6 +506,7 @@ App.jsx                 # Root component with context providers
 - Security and performance considerations
 
 **Output Artifacts:**
+
 - Technical architecture diagrams
 - Component specifications and interfaces
 - Database schema and migration scripts
@@ -465,6 +514,7 @@ App.jsx                 # Root component with context providers
 - Deployment and infrastructure requirements
 
 **Quality Checks:**
+
 - Architecture pattern consistency
 - Scalability and performance validation
 - Security best practices compliance
@@ -475,6 +525,7 @@ App.jsx                 # Root component with context providers
 **Primary Function:** Generate working code implementations based on architectural specifications.
 
 **Code Generation:**
+
 - Backend API implementations
 - Frontend component development
 - Database integration and migrations
@@ -482,6 +533,7 @@ App.jsx                 # Root component with context providers
 - Documentation and README files
 
 **Quality Standards:**
+
 - Code style and formatting consistency
 - Security vulnerability scanning
 - Performance optimization
@@ -489,6 +541,7 @@ App.jsx                 # Root component with context providers
 - Test coverage requirements
 
 **Framework Integration:**
+
 - Template-based code generation
 - Pattern recognition and reuse
 - Dependency management
@@ -499,6 +552,7 @@ App.jsx                 # Root component with context providers
 **Primary Function:** Validate generated code quality and create comprehensive test suites.
 
 **Testing Activities:**
+
 - Unit test generation and execution
 - Integration test scenarios
 - End-to-end test automation
@@ -506,6 +560,7 @@ App.jsx                 # Root component with context providers
 - Security vulnerability assessment
 
 **Quality Metrics:**
+
 - Code coverage percentages
 - Test pass/fail rates
 - Performance benchmarks
@@ -513,6 +568,7 @@ App.jsx                 # Root component with context providers
 - Documentation completeness
 
 **Deliverables:**
+
 - Automated test suites
 - Test execution reports
 - Quality assurance recommendations
@@ -524,12 +580,14 @@ App.jsx                 # Root component with context providers
 ### 7.1 API Security
 
 **Authentication and Authorization:**
+
 - API key validation for OpenAI access
 - Rate limiting per user/project
 - Input validation and sanitization
 - SQL injection prevention
 
 **Data Protection:**
+
 - Environment variable encryption
 - Secure API key storage
 - HTTPS enforcement
@@ -538,12 +596,14 @@ App.jsx                 # Root component with context providers
 ### 7.2 Application Security
 
 **Input Validation:**
+
 - File upload restrictions and scanning
 - Content type validation
 - Size limits enforcement
 - Malicious content detection
 
 **Output Security:**
+
 - Generated code security scanning
 - Dependency vulnerability checking
 - Configuration security review
@@ -552,12 +612,14 @@ App.jsx                 # Root component with context providers
 ### 7.3 Data Security
 
 **Database Security:**
+
 - Connection encryption
 - Access control and permissions
 - Audit logging for sensitive operations
 - Backup encryption
 
 **File Security:**
+
 - Access path validation
 - Content scanning for malicious code
 - Permission-based access control
@@ -568,18 +630,21 @@ App.jsx                 # Root component with context providers
 ### 8.1 OpenAI API Integration
 
 **API Client Configuration:**
+
 - Base URL and authentication headers
 - Retry logic with exponential backoff
 - Rate limiting and quota management
 - Error handling and fallback strategies
 
 **Model Selection:**
+
 - GPT-4o-mini for cost-effective processing
 - Temperature and parameter optimization
 - Context window management
 - Token usage optimization
 
 **Prompt Engineering:**
+
 - Template-based prompt construction
 - Few-shot learning examples
 - Output format specification
@@ -588,12 +653,14 @@ App.jsx                 # Root component with context providers
 ### 8.2 File Processing Integration
 
 **Document Processing:**
+
 - PDF text extraction
 - DOCX content parsing
 - Markdown processing
 - Image text recognition (OCR)
 
 **Code Analysis:**
+
 - Syntax validation
 - Dependency analysis
 - Security scanning
@@ -602,12 +669,14 @@ App.jsx                 # Root component with context providers
 ### 8.3 External Service Integration
 
 **Version Control:**
+
 - Git repository initialization
 - Automated commits and tagging
 - Branch management for variations
 - Merge conflict resolution
 
 **Deployment Services:**
+
 - Platform-specific deployment scripts
 - Environment configuration
 - Health check endpoints
@@ -618,18 +687,21 @@ App.jsx                 # Root component with context providers
 ### 9.1 Performance Optimization
 
 **Backend Performance:**
+
 - Async/await for I/O operations
 - Database query optimization
 - Connection pooling
 - Response caching strategies
 
 **Frontend Performance:**
+
 - Component lazy loading
 - Bundle size optimization
 - Image optimization
 - Progressive rendering
 
 **API Performance:**
+
 - Request batching and aggregation
 - Response compression
 - CDN utilization for static assets
@@ -638,18 +710,21 @@ App.jsx                 # Root component with context providers
 ### 9.2 Scalability Considerations
 
 **Current POC Limitations:**
+
 - Single SQLite database
 - No horizontal scaling
 - Limited concurrent users
 - Resource constraints on free tier
 
 **Production Migration Path:**
+
 - PostgreSQL database cluster
 - Redis for caching and sessions
 - Load balancer configuration
 - Microservice decomposition
 
 **Monitoring and Metrics:**
+
 - Response time tracking
 - Resource utilization monitoring
 - Error rate alerting
@@ -660,12 +735,14 @@ App.jsx                 # Root component with context providers
 ### 10.1 Local Development Setup
 
 **Prerequisites:**
+
 - Python 3.9+ with pip
 - Node.js 16+ with npm
 - Git for version control
 - Code editor (VS Code recommended)
 
 **Setup Steps:**
+
 1. Clone repository and install dependencies
 2. Configure environment variables
 3. Initialize SQLite database
@@ -673,6 +750,7 @@ App.jsx                 # Root component with context providers
 5. Start FastAPI development server
 
 **Development Workflow:**
+
 - Feature branch development
 - Automated testing on commits
 - Code review process
@@ -681,12 +759,14 @@ App.jsx                 # Root component with context providers
 ### 10.2 Production Deployment
 
 **Replit Deployment:**
+
 1. Import repository to Replit
 2. Configure environment secrets
 3. Install dependencies automatically
 4. Deploy with single button click
 
 **Alternative Platform Deployment:**
+
 1. Configure platform-specific settings
 2. Set up environment variables
 3. Deploy database migrations
@@ -695,12 +775,14 @@ App.jsx                 # Root component with context providers
 ### 10.3 CI/CD Pipeline
 
 **Automated Testing:**
+
 - Unit tests for all agent functions
 - Integration tests for API endpoints
 - Frontend component testing
 - End-to-end workflow testing
 
 **Deployment Pipeline:**
+
 - Automated builds on git push
 - Test execution and quality gates
 - Staged deployment with rollback
@@ -711,12 +793,14 @@ App.jsx                 # Root component with context providers
 ### 11.1 Application Monitoring
 
 **Health Checks:**
+
 - API endpoint availability
 - Database connectivity
 - Agent service status
 - External service dependencies
 
 **Performance Metrics:**
+
 - Response time percentiles
 - Throughput and request rates
 - Error rates and types
@@ -725,12 +809,14 @@ App.jsx                 # Root component with context providers
 ### 11.2 Business Metrics
 
 **Usage Analytics:**
+
 - Project creation and completion rates
 - Agent success and failure rates
 - Human intervention frequency
 - User engagement patterns
 
 **Cost Tracking:**
+
 - OpenAI API token usage
 - Platform resource consumption
 - Per-project cost analysis
@@ -739,18 +825,21 @@ App.jsx                 # Root component with context providers
 ### 11.3 Logging and Auditing
 
 **Structured Logging:**
+
 - JSON-formatted log entries
 - Correlation IDs for request tracing
 - Log level management (DEBUG, INFO, WARN, ERROR)
 - Centralized log aggregation
 
 **Audit Trail:**
+
 - All agent decisions and actions
 - Human interventions and approvals
 - System configuration changes
 - Data access and modifications
 
 **Log Retention:**
+
 - Daily rotation with compression
 - 30-day retention for active logs
 - Long-term archival for compliance
@@ -761,18 +850,21 @@ App.jsx                 # Root component with context providers
 ### 12.1 Unit Testing
 
 **Backend Testing:**
+
 - Agent function testing with mocked APIs
 - Database operation validation
 - API endpoint testing with test clients
 - Error handling scenario coverage
 
 **Frontend Testing:**
+
 - Component rendering tests
 - State management validation
 - User interaction simulation
 - API integration testing
 
 **Test Coverage Goals:**
+
 - 90%+ for critical agent functions
 - 80%+ for API endpoints
 - 70%+ for frontend components
@@ -781,18 +873,21 @@ App.jsx                 # Root component with context providers
 ### 12.2 Integration Testing
 
 **Agent Workflow Testing:**
+
 - End-to-end pipeline execution
 - Agent handoff validation
 - Error recovery scenarios
 - Performance under load
 
 **API Integration Testing:**
+
 - OpenAI API mock and live testing
 - Database transaction testing
 - Real-time update validation
 - File upload/download testing
 
 **Cross-Platform Testing:**
+
 - Browser compatibility testing
 - Mobile responsiveness validation
 - Different screen size testing
@@ -801,18 +896,21 @@ App.jsx                 # Root component with context providers
 ### 12.3 Performance Testing
 
 **Load Testing:**
+
 - Concurrent user simulation
 - API endpoint stress testing
 - Database performance under load
 - Memory and CPU usage profiling
 
 **Scalability Testing:**
+
 - Resource limit identification
 - Breaking point analysis
 - Recovery time measurement
 - Degradation patterns
 
 **Benchmarking:**
+
 - Response time baselines
 - Throughput capacity limits
 - Resource utilization efficiency
@@ -823,18 +921,21 @@ App.jsx                 # Root component with context providers
 ### 13.1 Routine Maintenance
 
 **Daily Operations:**
+
 - Health check verification
 - Log file rotation and cleanup
 - Database backup validation
 - Performance metric review
 
 **Weekly Operations:**
+
 - Security patch assessment
 - Dependency update review
 - Capacity planning analysis
 - User feedback review
 
 **Monthly Operations:**
+
 - Full system backup testing
 - Security vulnerability scanning
 - Performance optimization review
@@ -843,18 +944,21 @@ App.jsx                 # Root component with context providers
 ### 13.2 Incident Response
 
 **Monitoring and Alerting:**
+
 - Automated error detection
 - Performance threshold alerts
 - Security incident notifications
 - User-reported issue tracking
 
 **Response Procedures:**
+
 - Incident classification and prioritization
 - Communication plan and stakeholders
 - Resolution steps and rollback procedures
 - Post-incident review and improvements
 
 **Escalation Matrix:**
+
 - Level 1: Automated recovery attempts
 - Level 2: Human intervention required
 - Level 3: Emergency response procedures
@@ -863,18 +967,21 @@ App.jsx                 # Root component with context providers
 ### 13.3 Continuous Improvement
 
 **Feedback Collection:**
+
 - User experience surveys
 - Agent performance analytics
 - System performance metrics
 - Error pattern analysis
 
 **Optimization Opportunities:**
+
 - Prompt engineering improvements
 - Performance bottleneck resolution
 - User interface enhancements
 - Cost reduction strategies
 
 **Feature Evolution:**
+
 - User-requested enhancements
 - Technology stack upgrades
 - Integration expansion
@@ -885,18 +992,21 @@ App.jsx                 # Root component with context providers
 ### 14.1 Production Migration Strategy
 
 **Database Migration:**
+
 - SQLite to PostgreSQL conversion
 - Data integrity validation
 - Performance comparison testing
 - Rollback procedures
 
 **Platform Migration:**
+
 - Replit to Railway/Vercel transition
 - Configuration management
 - DNS and SSL certificate transfer
 - Performance monitoring
 
 **Architecture Evolution:**
+
 - Microservice decomposition plan
 - Service mesh implementation
 - Container orchestration setup
@@ -905,18 +1015,21 @@ App.jsx                 # Root component with context providers
 ### 14.2 Technology Upgrade Path
 
 **Backend Enhancements:**
+
 - Advanced LLM integration (Claude, Gemini)
 - Message queue upgrade (Redis, RabbitMQ)
 - Caching layer implementation
 - API versioning strategy
 
 **Frontend Improvements:**
+
 - State management upgrade (Zustand, Redux)
 - Component library adoption
 - Progressive Web App features
 - Performance optimization
 
 **Infrastructure Scaling:**
+
 - Container orchestration (Docker, Kubernetes)
 - Load balancing and auto-scaling
 - Multi-region deployment
@@ -925,18 +1038,21 @@ App.jsx                 # Root component with context providers
 ### 14.3 Feature Expansion
 
 **Advanced Agent Capabilities:**
+
 - Specialized domain agents
 - Learning from user feedback
 - Collaborative agent workflows
 - Custom agent training
 
 **Integration Enhancements:**
+
 - Third-party service connectors
 - Enterprise tool integration
 - API marketplace connectivity
 - Webhook and event streaming
 
 **User Experience Improvements:**
+
 - Advanced project templates
 - Collaboration features
 - Version control integration
@@ -947,12 +1063,14 @@ App.jsx                 # Root component with context providers
 ### 15.1 Data Privacy
 
 **Privacy by Design:**
+
 - Minimal data collection
 - User consent management
 - Data retention policies
 - Secure deletion procedures
 
 **Compliance Framework:**
+
 - GDPR compliance for EU users
 - CCPA compliance for California users
 - Industry-specific regulations
@@ -961,12 +1079,14 @@ App.jsx                 # Root component with context providers
 ### 15.2 Security Governance
 
 **Security Policies:**
+
 - Access control procedures
 - Incident response protocols
 - Vulnerability management
 - Security training requirements
 
 **Risk Management:**
+
 - Security risk assessments
 - Threat modeling exercises
 - Penetration testing schedule
@@ -975,12 +1095,14 @@ App.jsx                 # Root component with context providers
 ### 15.3 Operational Governance
 
 **Change Management:**
+
 - Change request procedures
 - Impact assessment protocols
 - Approval workflows
 - Rollback procedures
 
 **Documentation Standards:**
+
 - Technical documentation requirements
 - User documentation maintenance
 - API documentation automation
@@ -991,12 +1113,14 @@ App.jsx                 # Root component with context providers
 ### 16.1 Current Cost Structure
 
 **Free Tier Utilization:**
+
 - Replit: $0/month (with boost credits for always-on)
 - OpenAI: $0/month (within free tier limits)
 - Domain: $0/month (using subdomain)
 - Total: ~$5-10/month for production uptime
 
 **Cost Scaling Factors:**
+
 - OpenAI API usage based on token consumption
 - Platform resource usage growth
 - Custom domain and SSL costs
@@ -1005,18 +1129,21 @@ App.jsx                 # Root component with context providers
 ### 16.2 Cost Optimization Strategies
 
 **Token Usage Optimization:**
+
 - Prompt engineering for efficiency
 - Context window management
 - Response caching strategies
 - Model selection optimization
 
 **Resource Optimization:**
+
 - Database query optimization
 - Caching implementation
 - Asset optimization and compression
 - Efficient data structures
 
 **Platform Optimization:**
+
 - Resource usage monitoring
 - Scaling strategies
 - Alternative service evaluation
@@ -1025,12 +1152,14 @@ App.jsx                 # Root component with context providers
 ### 16.3 Budget Planning
 
 **Monthly Budget Projections:**
+
 - Development phase: $0-20/month
 - Testing phase: $20-50/month
 - Production launch: $50-100/month
 - Scale operation: $100-500/month
 
 **Cost Control Measures:**
+
 - Usage alerting and limits
 - Budget approval workflows
 - Cost allocation tracking
@@ -1041,18 +1170,21 @@ App.jsx                 # Root component with context providers
 ### 17.1 Technical Risks
 
 **High Probability Risks:**
+
 - Free tier limitations exceeded
 - OpenAI API rate limiting
 - SQLite performance issues
 - Replit service interruptions
 
 **Medium Probability Risks:**
+
 - Agent infinite loops
 - Data corruption issues
 - Security vulnerabilities
 - Integration failures
 
 **Low Probability Risks:**
+
 - Complete platform outages
 - Data breaches
 - Legal compliance issues
@@ -1061,12 +1193,14 @@ App.jsx                 # Root component with context providers
 ### 17.2 Mitigation Strategies
 
 **Immediate Mitigations:**
+
 - Usage monitoring and alerting
 - Fallback service configurations
 - Regular backup procedures
 - Security scanning automation
 
 **Long-term Mitigations:**
+
 - Platform diversification strategy
 - Advanced monitoring implementation
 - Security framework adoption
@@ -1075,12 +1209,14 @@ App.jsx                 # Root component with context providers
 ### 17.3 Contingency Planning
 
 **Service Disruption Response:**
+
 - Alternative platform activation
 - Data recovery procedures
 - User communication protocols
 - Service restoration timelines
 
 **Scaling Challenges:**
+
 - Performance optimization plans
 - Architecture migration paths
 - Resource allocation strategies
@@ -1091,18 +1227,21 @@ App.jsx                 # Root component with context providers
 ### 18.1 Phase 1: Foundation (Weeks 1-2)
 
 **Core Infrastructure:**
+
 - Replit project setup and configuration
 - SQLite database schema implementation
 - FastAPI backend with basic routing
 - React frontend with component structure
 
 **Basic Agent Implementation:**
+
 - Analyst agent with OpenAI integration
 - Simple workflow orchestration
 - Message queue functionality
 - Real-time updates via SSE
 
 **Success Criteria:**
+
 - Working end-to-end prototype
 - Basic agent conversation flow
 - Real-time UI updates
@@ -1111,18 +1250,21 @@ App.jsx                 # Root component with context providers
 ### 18.2 Phase 2: Enhancement (Weeks 3-4)
 
 **Complete Agent Suite:**
+
 - Architect, Developer, and Tester agents
 - Advanced workflow management
 - Conflict detection and resolution
 - Human intervention capabilities
 
 **UI/UX Improvements:**
+
 - Complete 5-component interface
 - File upload and download
 - Project management features
 - Performance optimization
 
 **Success Criteria:**
+
 - Complete agent workflow functioning
 - Professional user interface
 - Human oversight capabilities
@@ -1131,18 +1273,21 @@ App.jsx                 # Root component with context providers
 ### 18.3 Phase 3: Polish (Weeks 5-6)
 
 **Production Readiness:**
+
 - Comprehensive testing suite
 - Documentation completion
 - Security hardening
 - Performance optimization
 
 **Deployment and Launch:**
+
 - Production deployment setup
 - Monitoring and alerting
 - User acceptance testing
 - Stakeholder training
 
 **Success Criteria:**
+
 - Production-ready system
 - Complete documentation
 - User acceptance achieved
@@ -1153,12 +1298,14 @@ App.jsx                 # Root component with context providers
 ### 19.1 Technical Metrics
 
 **Performance Targets:**
+
 - API response time: < 2 seconds average
 - Agent processing time: < 30 seconds per stage
 - UI load time: < 1 second
 - System uptime: > 99%
 
 **Quality Targets:**
+
 - Agent success rate: > 85%
 - Human intervention rate: < 20%
 - Error recovery rate: > 90%
@@ -1167,12 +1314,14 @@ App.jsx                 # Root component with context providers
 ### 19.2 Business Metrics
 
 **User Experience:**
+
 - Task completion rate: > 90%
 - User satisfaction score: > 4/5
 - Time to value: < 10 minutes
 - Feature adoption rate: > 70%
 
 **Operational Efficiency:**
+
 - Development time reduction: > 50%
 - Code quality improvement: > 30%
 - Error reduction: > 40%
@@ -1181,6 +1330,7 @@ App.jsx                 # Root component with context providers
 ### 19.3 Financial Metrics
 
 **Cost Efficiency:**
+
 - Cost per project: < $2
 - Token efficiency: > 80% useful output
 - Platform cost: < $100/month

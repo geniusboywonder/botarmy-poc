@@ -11,11 +11,13 @@ This document provides detailed implementation instructions for the BotArmy POC,
 ## Prerequisites
 
 ### Required Accounts and Access
+
 - **Replit Account**: Free tier (upgrade to Hacker plan $7/month if needed for always-on)
 - **OpenAI API Key**: Free tier with GPT-4o-mini access
 - **GitHub Account**: For version control and backup
 
 ### Required Skills
+
 - **Developer**: Python (FastAPI), JavaScript (React), SQL (SQLite)
 - **Tester**: Manual testing, basic automation with Python/JavaScript
 - **DevOps**: Replit deployment, environment configuration, monitoring
@@ -27,6 +29,7 @@ This document provides detailed implementation instructions for the BotArmy POC,
 **Developer Tasks:**
 
 1. **Initialize Replit Project**
+
 ```bash
 # Create new Replit with Python template
 # Name: botarmy-poc
@@ -34,6 +37,7 @@ This document provides detailed implementation instructions for the BotArmy POC,
 ```
 
 2. **Set up project structure**
+
 ```
 botarmy-poc/
 ├── main.py              # FastAPI application
@@ -49,6 +53,7 @@ botarmy-poc/
 ```
 
 3. **Install dependencies** (requirements.txt)
+
 ```txt
 fastapi==0.104.1
 uvicorn==0.24.0
@@ -63,6 +68,7 @@ httpx==0.25.2
 ```
 
 4. **Create database schema** (database.py)
+
 ```python
 import sqlite3
 import json
@@ -208,6 +214,7 @@ class DatabaseManager:
 ```
 
 5. **Create LLM client** (llm_client.py)
+
 ```python
 import asyncio
 import json
@@ -290,6 +297,7 @@ class LLMClient:
 **DevOps Tasks:**
 
 1. **Configure Replit environment**
+
 ```bash
 # .replit file
 modules = ["python-3.11"]
@@ -307,6 +315,7 @@ externalPort = 80
 ```
 
 2. **Set up environment variables**
+
 ```bash
 # In Replit Secrets tab
 OPENAI_API_KEY=your_openai_api_key_here
@@ -315,6 +324,7 @@ LOG_LEVEL=INFO
 ```
 
 3. **Create data directory**
+
 ```bash
 mkdir -p data/logs
 touch data/botarmy.db
@@ -325,6 +335,7 @@ touch data/botarmy.db
 **Developer Tasks:**
 
 1. **Create base agent class** (agents.py)
+
 ```python
 import asyncio
 import json
@@ -555,6 +566,7 @@ class ArchitectAgent(BaseAgent):
 ```
 
 2. **Create main FastAPI application** (main.py - Part 1)
+
 ```python
 import os
 import asyncio
@@ -851,6 +863,7 @@ if __name__ == "__main__":
 **Tester Tasks:**
 
 1. **Create basic test structure**
+
 ```python
 # tests/test_database.py
 import pytest
@@ -895,6 +908,7 @@ class TestDatabaseManager:
 ```
 
 2. **Create API test cases**
+
 ```python
 # tests/test_api.py
 import pytest
@@ -946,6 +960,7 @@ class TestAPI:
 **Developer Tasks:**
 
 1. **Create React application structure**
+
 ```bash
 # Install Node.js dependencies (using Replit package manager)
 # In Replit shell:
@@ -955,6 +970,7 @@ npm install @heroicons/react classnames
 ```
 
 2. **Create Vite configuration** (vite.config.js)
+
 ```javascript
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
@@ -977,6 +993,7 @@ export default defineConfig({
 ```
 
 3. **Create main React components** (src/App.jsx)
+
 ```javascript
 import React, { useState, useEffect, createContext, useContext } from 'react';
 import './App.css';
@@ -1462,6 +1479,7 @@ function startSSEConnection(projectId, updateState) {
 ```
 
 4. **Create CSS styles** (src/App.css)
+
 ```css
 /* Basic Tailwind-like utility classes for styling */
 .container {
@@ -1567,6 +1585,7 @@ function startSSEConnection(projectId, updateState) {
 ```
 
 5. **Create HTML template** (static/index.html)
+
 ```html
 <!DOCTYPE html>
 <html lang="en">
@@ -1614,6 +1633,7 @@ function startSSEConnection(projectId, updateState) {
 ```
 
 6. **Create React entry point** (src/main.jsx)
+
 ```javascript
 import React from 'react'
 import ReactDOM from 'react-dom/client'
@@ -1629,6 +1649,7 @@ ReactDOM.createRoot(document.getElementById('root')).render(
 **DevOps Tasks:**
 
 1. **Update Replit configuration**
+
 ```bash
 # Update .replit file
 modules = ["python-3.11", "nodejs-18"]
@@ -1650,6 +1671,7 @@ NODE_ENV = "production"
 ```
 
 2. **Create startup script** (start.sh)
+
 ```bash
 #!/bin/bash
 echo "Starting BotArmy POC..."
@@ -1666,6 +1688,7 @@ python main.py
 ```
 
 3. **Add build scripts to package.json**
+
 ```json
 {
   "name": "botarmy-poc-frontend",
@@ -1689,6 +1712,7 @@ python main.py
 **Tester Tasks:**
 
 1. **Create end-to-end test scenarios**
+
 ```python
 # tests/test_integration.py
 import pytest
@@ -1758,6 +1782,7 @@ class TestIntegration:
 **Developer Tasks:**
 
 1. **Complete DeveloperAgent and TesterAgent classes** (Add to agents.py)
+
 ```python
 class DeveloperAgent(BaseAgent):
     def __init__(self, llm_client: LLMClient, db: DatabaseManager):
@@ -1864,4 +1889,3 @@ class DeveloperAgent(BaseAgent):
         # Create project directory
         project_dir = f"data/generated/{project_id}"
         os.makedirs(project_dir, exist_ok=True)
-        
