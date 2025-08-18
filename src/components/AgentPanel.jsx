@@ -5,7 +5,7 @@ const AgentPanel = () => {
   const { agents, loading, error, refetch } = useContext(AppContext);
 
   return (
-    <div className="bg-white dark:bg-gray-800 rounded-xl shadow border border-gray-200 dark:border-gray-700 p-4">
+    <div className="bg-white dark:bg-gray-800 rounded-xl shadow border border-gray-200 dark:border-gray-700 p-4" data-testid="agent-panel">
       <h3 className="text-lg font-semibold mb-4">Agents</h3>
       {loading.agents && <p>Loading agents...</p>}
       {error.agents && (
