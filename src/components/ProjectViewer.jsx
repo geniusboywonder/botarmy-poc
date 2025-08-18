@@ -34,12 +34,14 @@ const FileTree = ({ files }) => {
 };
 
 const ProjectViewer = () => {
-  const { artifacts } = useContext(AppContext);
+  const { artifacts, loading, error } = useContext(AppContext);
 
   return (
     <div className="bg-white dark:bg-gray-800 rounded-xl shadow border border-gray-200 dark:border-gray-700 p-4">
       <h3 className="text-lg font-semibold mb-4">Project Viewer</h3>
-      <FileTree files={artifacts} />
+      {loading.artifacts && <p>Loading artifacts...</p>}
+      {error.artifacts && <p className="text-red-500" data-testid="error-message">{error.artifacts}</p>}
+      {!loading.artifacts && !error.artifacts && <FileTree files={artifacts} />}
     </div>
   );
 };
