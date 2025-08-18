@@ -1,11 +1,20 @@
-import React, { useContext } from 'react';
+import React, { useContext, useState } from 'react';
 import { AppContext } from '../context/AppContext.jsx';
+import AgentCard from './shared/AgentCard.jsx';
 
 const AgentPanel = () => {
-  const { agents, loading, error, refetch } = useContext(AppContext);
+  const { agents, setAgents, loading, error, refetch } = useContext(AppContext);
+
+  const handleToggleExpand = (agentId) => {
+    setAgents(
+      agents.map((agent) =>
+        agent.id === agentId ? { ...agent, expanded: !agent.expanded } : agent
+      )
+    );
+  };
 
   return (
-    <div className="bg-white dark:bg-gray-800 rounded-xl shadow border border-gray-200 dark:border-gray-700 p-4" data-testid="agent-panel">
+    <div className="bg-white dark:bg-gray-800 rounded-xl shadow border border-gray-200 dark:border-gray-700 p-4 h-full flex flex-col" data-testid="agent-panel">
       <h3 className="text-lg font-semibold mb-4">Agents</h3>
       {loading.agents && <p>Loading agents...</p>}
       {error.agents && (
@@ -17,12 +26,13 @@ const AgentPanel = () => {
         </div>
       )}
       {!loading.agents && !error.agents && (
-        <div className="space-y-4">
+        <div className="space-y-4 overflow-y-auto">
           {agents.map(agent => (
-            <div key={agent.id} className="p-2 border rounded border-gray-300 dark:border-gray-600">
-              <p className="font-bold">{agent.role}</p>
-              <p>Status: {agent.status}</p>
-            </div>
+            <AgentCard
+              key={agent.id}
+              agent={agent}
+              onToggleExpand={handleToggleExpand}
+            />
           ))}
         </div>
       )}
