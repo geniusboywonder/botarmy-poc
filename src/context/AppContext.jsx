@@ -14,60 +14,38 @@ export const AppProvider = ({ children }) => {
   const chatEndRef = useRef(null);
   const logsEndRef = useRef(null);
 
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        setLoading(prev => ({ ...prev, agents: true }));
-        const agentsData = await fetchAgents();
-        setAgents(agentsData);
-      } catch (e) {
-        setError(prev => ({ ...prev, agents: e.message }));
-      } finally {
-        setLoading(prev => ({ ...prev, agents: false }));
-      }
+  const fetchResource = async (key, fetcher, setter) => {
+    try {
+      setLoading(prev => ({ ...prev, [key]: true }));
+      setError(prev => ({ ...prev, [key]: null }));
+      const data = await fetcher();
+      setter(data);
+    } catch (e) {
+      setError(prev => ({ ...prev, [key]: e.message }));
+    } finally {
+      setLoading(prev => ({ ...prev, [key]: false }));
+    }
+  };
 
-      try {
-        setLoading(prev => ({ ...prev, tasks: true }));
-        const tasksData = await fetchTasks();
-        setTasks(tasksData);
-      } catch (e) {
-        setError(prev => ({ ...prev, tasks: e.message }));
-      } finally {
-        setLoading(prev => ({ ...prev, tasks: false }));
-      }
-
-      try {
-        setLoading(prev => ({ ...prev, artifacts: true }));
-        const artifactsData = await fetchArtifacts();
-        setArtifacts(artifactsData);
-      } catch (e) {
-        setError(prev => ({ ...prev, artifacts: e.message }));
-      } finally {
-        setLoading(prev => ({ ...prev, artifacts: false }));
-      }
-
-        try {
-            setLoading(prev => ({ ...prev, messages: true }));
-            const messagesData = await fetchMessages();
-            setChatMessages(messagesData);
-        } catch (e) {
-            setError(prev => ({ ...prev, messages: e.message }));
-        } finally {
-            setLoading(prev => ({ ...prev, messages: false }));
-        }
-
-        try {
-            setLoading(prev => ({ ...prev, logs: true }));
-            const logsData = await fetchLogs();
-            setLogs(logsData);
-        } catch (e) {
-            setError(prev => ({ ...prev, logs: e.message }));
-        } finally {
-            setLoading(prev => ({ ...prev, logs: false }));
-        }
+  const refetch = (key) => {
+    const resourceMap = {
+      agents: () => fetchResource('agents', fetchAgents, setAgents),
+      tasks: () => fetchResource('tasks', fetchTasks, setTasks),
+      artifacts: () => fetchResource('artifacts', fetchArtifacts, setArtifacts),
+      messages: () => fetchResource('messages', fetchMessages, setChatMessages),
+      logs: () => fetchResource('logs', fetchLogs, setLogs),
     };
+    if (resourceMap[key]) {
+      resourceMap[key]();
+    }
+  };
 
-    fetchData();
+  useEffect(() => {
+    fetchResource('agents', fetchAgents, setAgents);
+    fetchResource('tasks', fetchTasks, setTasks);
+    fetchResource('artifacts', fetchArtifacts, setArtifacts);
+    fetchResource('messages', fetchMessages, setChatMessages);
+    fetchResource('logs', fetchLogs, setLogs);
 
     const sse = connectToSSE((event) => {
       const eventData = JSON.parse(event.data);
@@ -107,6 +85,7 @@ export const AppProvider = ({ children }) => {
     setArtifacts,
     loading,
     error,
+    refetch,
     chatEndRef,
     logsEndRef,
   };

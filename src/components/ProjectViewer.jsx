@@ -1,5 +1,5 @@
 import React, { useContext, useState } from 'react';
-import { AppContext } from '../context/AppContext';
+import { AppContext } from '../context/AppContext.jsx';
 import { ChevronRight, Folder, File } from 'lucide-react';
 
 const FileTree = ({ files }) => {
@@ -34,13 +34,20 @@ const FileTree = ({ files }) => {
 };
 
 const ProjectViewer = () => {
-  const { artifacts, loading, error } = useContext(AppContext);
+  const { artifacts, loading, error, refetch } = useContext(AppContext);
 
   return (
     <div className="bg-white dark:bg-gray-800 rounded-xl shadow border border-gray-200 dark:border-gray-700 p-4">
       <h3 className="text-lg font-semibold mb-4">Project Viewer</h3>
       {loading.artifacts && <p>Loading artifacts...</p>}
-      {error.artifacts && <p className="text-red-500" data-testid="error-message">{error.artifacts}</p>}
+      {error.artifacts && (
+        <div>
+          <p className="text-red-500" data-testid="error-message">{error.artifacts}</p>
+          <button onClick={() => refetch('artifacts')} className="mt-2 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">
+            Retry
+          </button>
+        </div>
+      )}
       {!loading.artifacts && !error.artifacts && <FileTree files={artifacts} />}
     </div>
   );
