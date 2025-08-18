@@ -20,8 +20,22 @@ from agents import AnalystAgent, ArchitectAgent
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
+from contextlib import asynccontextmanager
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # Start the background task
+    task = asyncio.create_task(process_message_queue())
+    yield
+    # Clean up the background task
+    task.cancel()
+    try:
+        await task
+    except asyncio.CancelledError:
+        logger.info("Background task cancelled successfully.")
+
 # Initialize components
-app = FastAPI(title="BotArmy POC", version="1.0.0")
+app = FastAPI(title="BotArmy POC", version="1.0.0", lifespan=lifespan)
 db = DatabaseManager()
 llm_client = LLMClient(api_key=os.getenv("OPENAI_API_KEY"))
 
@@ -316,8 +330,4 @@ app.mount("/", StaticFiles(directory="static", html=True), name="static")
 
 if __name__ == "__main__":
     import uvicorn
-
-    # Start message processing in background
-    asyncio.create_task(process_message_queue())
-
     uvicorn.run(app, host="0.0.0.0", port=8000)
