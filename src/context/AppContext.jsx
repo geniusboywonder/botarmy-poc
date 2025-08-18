@@ -15,11 +15,11 @@ export const AppProvider = ({ children }) => {
   const chatEndRef = useRef(null);
   const logsEndRef = useRef(null);
 
-  const fetchResource = async (key, fetcher, setter, projectId) => {
+  const fetchResource = async (key, fetcher, setter) => {
     try {
       setLoading(prev => ({ ...prev, [key]: true }));
       setError(prev => ({ ...prev, [key]: null }));
-      const data = await fetcher(projectId);
+      const data = await fetcher(); // No longer passing projectId
       setter(data);
     } catch (e) {
       setError(prev => ({ ...prev, [key]: e.message }));
@@ -30,11 +30,11 @@ export const AppProvider = ({ children }) => {
 
   const refetch = (key) => {
     const resourceMap = {
-      agents: () => fetchResource('agents', fetchAgents, setAgents, currentProject),
-      tasks: () => fetchResource('tasks', fetchTasks, setTasks, currentProject),
-      artifacts: () => fetchResource('artifacts', fetchArtifacts, setArtifacts, currentProject),
-      messages: () => fetchResource('messages', fetchMessages, setChatMessages, currentProject),
-      logs: () => fetchResource('logs', fetchLogs, setLogs, currentProject),
+      agents: () => fetchResource('agents', fetchAgents, setAgents),
+      tasks: () => fetchResource('tasks', fetchTasks, setTasks),
+      artifacts: () => fetchResource('artifacts', fetchArtifacts, setArtifacts),
+      messages: () => fetchResource('messages', fetchMessages, setChatMessages),
+      logs: () => fetchResource('logs', fetchLogs, setLogs),
     };
     if (resourceMap[key]) {
       resourceMap[key]();
@@ -42,22 +42,37 @@ export const AppProvider = ({ children }) => {
   };
 
   useEffect(() => {
-    console.log("AppContext useEffect triggered. Project ID:", currentProject);
-    if (currentProject) {
-      fetchResource('agents', fetchAgents, setAgents, currentProject);
-      fetchResource('tasks', fetchTasks, setTasks, currentProject);
-      fetchResource('artifacts', fetchArtifacts, setArtifacts, currentProject);
-      fetchResource('messages', fetchMessages, setChatMessages, currentProject);
-      fetchResource('logs', fetchLogs, setLogs, currentProject);
+    console.log("AppContext useEffect triggered - Loading global data");
+    
+    // Fetch all resources using global endpoints
+    fetchResource('agents', fetchAgents, setAgents);
+    fetchResource('tasks', fetchTasks, setTasks);
+    fetchResource('artifacts', fetchArtifacts, setArtifacts);
+    fetchResource('messages', fetchMessages, setChatMessages);
+    fetchResource('logs', fetchLogs, setLogs);
 
-      const sse = connectToSSE(currentProject, (event) => {
+    // Connect to global SSE endpoint
+    const sse = connectToSSE((event) => {
+      try {
         const eventData = JSON.parse(event.data);
+        console.log('SSE Event received:', eventData.type, eventData);
+        
         switch (eventData.type) {
           case 'agent_update':
-            setAgents(prevAgents => prevAgents.map(agent => agent.id === eventData.payload.id ? { ...agent, ...eventData.payload } : agent));
+            if (eventData.payload) {
+              setAgents(prevAgents => 
+                prevAgents.map(agent => 
+                  eventData.payload[agent.id] ? 
+                    { ...agent, ...eventData.payload[agent.id] } : 
+                    agent
+                )
+              );
+            }
             break;
           case 'new_task':
-            setTasks(prevTasks => [...prevTasks, eventData.payload]);
+            if (eventData.payload && Array.isArray(eventData.payload)) {
+              setTasks(prevTasks => [...prevTasks, ...eventData.payload]);
+            }
             break;
           case 'log_message':
             setLogs(prevLogs => [...prevLogs, eventData.payload]);
@@ -65,16 +80,21 @@ export const AppProvider = ({ children }) => {
           case 'chat_message':
             setChatMessages((prevMessages) => [...prevMessages, eventData.payload]);
             break;
+          case 'connected':
+            console.log('SSE Connected successfully');
+            break;
           default:
             console.warn('Unknown SSE event type:', eventData.type);
         }
-      });
+      } catch (e) {
+        console.error('Error parsing SSE event:', e);
+      }
+    });
 
-      return () => {
-        sse.close();
-      };
-    }
-  }, [currentProject]);
+    return () => {
+      sse.close();
+    };
+  }, []); // Remove currentProject dependency
 
   const value = {
     currentProject,

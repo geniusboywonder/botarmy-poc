@@ -11,69 +11,44 @@ const handleResponse = async (response) => {
   return response.json();
 };
 
-export const fetchAgents = async (projectId) => {
-  if (!projectId) return [];
-  // Backend does not have a dedicated agent endpoint, returning mock data
-  console.warn("API: fetchAgents is returning mock data.");
-  return Promise.resolve([
-    {
-      id: 'analyst',
-      role: 'Analyst',
-      status: 'working',
-      queue: { todo: 3, inProgress: 1, done: 5, failed: 0 },
-      currentTask: 'Analyzing user requirements for project X.',
-      handoff: null,
-      expanded: false,
-      chat: ['Initial analysis started.', 'Found 3 key requirements.'],
-    },
-    {
-      id: 'architect',
-      role: 'Architect',
-      status: 'idle',
-      queue: { todo: 1, inProgress: 0, done: 8, failed: 1 },
-      currentTask: null,
-      handoff: null,
-      expanded: false,
-      chat: ['Received analysis from Analyst.', 'Designed initial architecture.'],
-    },
-  ]);
-};
-
-export const fetchTasks = async (projectId) => {
-  if (!projectId) return [];
-  const response = await fetch(`/api/projects/${projectId}/actions`);
+export const fetchAgents = async () => {
+  // Use new global agents endpoint
+  const response = await fetch('/api/agents');
   const data = await handleResponse(response);
-  return data.actions; // The endpoint returns { "actions": [...] }
+  return data.agents; // The endpoint returns { "agents": [...] }
 };
 
-export const fetchArtifacts = async (projectId) => {
-  if (!projectId) return {};
-  const response = await fetch(`/api/projects/${projectId}`);
+export const fetchTasks = async () => {
+  // Use new global tasks endpoint
+  const response = await fetch('/api/tasks');
   const data = await handleResponse(response);
-  // The project 'spec' field contains the file structure artifacts
-  return data.spec || {};
+  return data.tasks; // The endpoint returns { "tasks": [...] }
 };
 
-export const fetchMessages = async (projectId) => {
-  if (!projectId) return [];
-  const response = await fetch(`/api/projects/${projectId}/messages`);
+export const fetchArtifacts = async () => {
+  // Use new global artifacts endpoint
+  const response = await fetch('/api/artifacts');
+  const data = await handleResponse(response);
+  return data.artifacts; // The endpoint returns { "artifacts": {...} }
+};
+
+export const fetchMessages = async () => {
+  // Use new global messages endpoint
+  const response = await fetch('/api/messages');
   const data = await handleResponse(response);
   return data.messages; // The endpoint returns { "messages": [...] }
 };
 
-export const fetchLogs = async (projectId) => {
-  if (!projectId) return [];
-  // No dedicated logs endpoint, re-using messages for now
-  console.warn("API: fetchLogs is using fetchMessages as a fallback.");
-  return fetchMessages(projectId);
+export const fetchLogs = async () => {
+  // Use new global logs endpoint
+  const response = await fetch('/api/logs');
+  const data = await handleResponse(response);
+  return data.logs; // The endpoint returns { "logs": [...] }
 };
 
-export const connectToSSE = (projectId, onMessage) => {
-  if (!projectId) {
-    // Return a mock object that does nothing
-    return { close: () => {} };
-  }
-  const eventSource = new EventSource(`/api/stream/${projectId}`);
+export const connectToSSE = (onMessage) => {
+  // Use new global events endpoint
+  const eventSource = new EventSource('/api/events');
 
   eventSource.onmessage = (event) => {
     onMessage(event);
