@@ -195,6 +195,7 @@ Thumbs.db
 .eslintcache
 
 # Dependency directories
+node_modules/
 jspm_packages/
 
 # Output of 'npm pack'
