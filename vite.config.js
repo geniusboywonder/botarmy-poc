@@ -1,8 +1,19 @@
+/// <reference types="vitest" />
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
+import viteCompression from 'vite-plugin-compression';
 
 export default defineConfig({
-  plugins: [react()],
+  plugins: [
+    react(),
+    viteCompression({
+      verbose: true,
+      disable: false,
+      threshold: 10240, // 10kb
+      algorithm: 'gzip',
+      ext: '.gz',
+    }),
+  ],
   build: {
     outDir: 'static',
     emptyOutDir: true,
@@ -14,5 +25,10 @@ export default defineConfig({
         changeOrigin: true,
       },
     },
+  },
+  test: {
+    globals: true,
+    environment: 'jsdom',
+    setupFiles: './tests/setup.js',
   },
 })

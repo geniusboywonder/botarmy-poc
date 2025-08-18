@@ -1,13 +1,15 @@
-import { useState, useContext } from 'react';
+import { useState, useContext, Suspense, lazy } from 'react';
 import Header from './components/layout/Header.jsx';
 import Sidebar from './components/layout/Sidebar.jsx';
-import Dashboard from './components/pages/Dashboard.jsx';
-import Tasks from './components/pages/Tasks.jsx';
-import Logs from './components/pages/Logs.jsx';
-import Artifacts from './components/pages/Artifacts.jsx';
-import Settings from './components/pages/Settings.jsx';
 import StatusBar from './components/StatusBar.jsx';
-import { AppContext } from './context/AppContext.js';
+import { AppContext } from './context/AppContext.jsx';
+import ErrorBoundary from './components/ErrorBoundary.jsx';
+
+const Dashboard = lazy(() => import('./components/pages/Dashboard.jsx'));
+const Tasks = lazy(() => import('./components/pages/Tasks.jsx'));
+const Logs = lazy(() => import('./components/pages/Logs.jsx'));
+const Artifacts = lazy(() => import('./components/pages/Artifacts.jsx'));
+const Settings = lazy(() => import('./components/pages/Settings.jsx'));
 
 
 export default function App() {
@@ -65,7 +67,11 @@ export default function App() {
           />
 
           <main className="flex-1 p-6 overflow-y-auto">
-            {renderPage()}
+            <ErrorBoundary>
+              <Suspense fallback={<div>Loading page...</div>}>
+                {renderPage()}
+              </Suspense>
+            </ErrorBoundary>
           </main>
         </div>
         <StatusBar />
