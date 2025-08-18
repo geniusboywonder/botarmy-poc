@@ -163,3 +163,20 @@ class DatabaseManager:
                 'updated_at': row[7]
             }
         return None
+
+    def create_project_with_id(self, project_id: str, name: str, requirements: str) -> str:
+        """Create project with specific ID"""
+        conn = sqlite3.connect(self.db_path)
+        try:
+            conn.execute(
+                '''
+                INSERT INTO projects (id, name, requirements)
+                VALUES (?, ?, ?)
+            ''', (project_id, name, requirements))
+            conn.commit()
+            return project_id
+        except sqlite3.IntegrityError:
+            # Project already exists
+            return project_id
+        finally:
+            conn.close()
