@@ -415,9 +415,7 @@ async def get_global_logs():
 async def stream_global_events():
     """Global SSE endpoint for real-time updates"""
     async def generate():
-        yield f"data: {json.dumps({'type': 'connected', 'timestamp': datetime.utcnow().isoformat()})}
-
-"
+        yield f"data: {json.dumps({'type': 'connected', 'timestamp': datetime.utcnow().isoformat()})}\n\n"
         
         while True:
             try:
@@ -434,9 +432,7 @@ async def stream_global_events():
                     },
                     'timestamp': datetime.utcnow().isoformat()
                 }
-                yield f"data: {json.dumps(agent_statuses)}
-
-"
+                yield f"data: {json.dumps(agent_statuses)}\n\n"
                 
                 # Send recent task updates
                 try:
@@ -447,9 +443,7 @@ async def stream_global_events():
                             'payload': tasks_response["tasks"][:1],  # Send latest task
                             'timestamp': datetime.utcnow().isoformat()
                         }
-                        yield f"data: {json.dumps(task_update)}
-
-"
+                        yield f"data: {json.dumps(task_update)}\n\n"
                 except:
                     pass  # Skip if no tasks
                 
