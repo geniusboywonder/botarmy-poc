@@ -27,13 +27,17 @@ const AgentPanel = () => {
       )}
       {!loading.agents && !error.agents && (
         <div className="space-y-4 overflow-y-auto">
-          {agents.map(agent => (
-            <AgentCard
-              key={agent.id}
-              agent={agent}
-              onToggleExpand={handleToggleExpand}
-            />
-          ))}
+          {Array.isArray(agents) && agents.length > 0 ? (
+            agents.map(agent => (
+              <AgentCard
+                key={agent.id}
+                agent={agent}
+                onToggleExpand={handleToggleExpand}
+              />
+            ))
+          ) : (
+            <p className="text-gray-500 dark:text-gray-400">No agents available.</p>
+          )}
         </div>
       )}
     </div>

@@ -29,7 +29,30 @@ export const fetchArtifacts = async () => {
   // Use new global artifacts endpoint
   const response = await fetch('/api/artifacts');
   const data = await handleResponse(response);
-  return data.artifacts; // The endpoint returns { "artifacts": {...} }
+  
+  // Ensure we always return a valid artifacts structure
+  const artifacts = data.artifacts || {};
+  
+  // Ensure each category is an array (defensive programming)
+  const categories = ['requirements', 'design', 'testing', 'deployment', 'maintenance'];
+  categories.forEach(category => {
+    if (!Array.isArray(artifacts[category])) {
+      artifacts[category] = [];
+    }
+  });
+  
+  // Handle development category specially (it has subcategories)
+  if (!artifacts.development || typeof artifacts.development !== 'object') {
+    artifacts.development = { source_code: [], documentation: [] };
+  }
+  if (!Array.isArray(artifacts.development.source_code)) {
+    artifacts.development.source_code = [];
+  }
+  if (!Array.isArray(artifacts.development.documentation)) {
+    artifacts.development.documentation = [];
+  }
+  
+  return artifacts;
 };
 
 export const fetchMessages = async () => {

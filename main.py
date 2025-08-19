@@ -301,17 +301,25 @@ async def get_global_tasks():
 async def get_global_artifacts():
     """Get artifacts across all projects - Global endpoint for frontend"""
     try:
-        # For now, return empty structure - will be populated as agents create artifacts
-        return {
-            "artifacts": {
-                "requirements": [],
-                "design": [],
-                "development": [],
-                "testing": [],
-                "deployment": [],
-                "maintenance": []
-            }
+        # Return artifacts structure that's compatible with frontend expectations
+        artifacts_structure = {
+            "requirements": [],
+            "design": [],
+            "development": {
+                "source_code": [],
+                "documentation": []
+            },
+            "testing": [],
+            "deployment": [],
+            "maintenance": []
         }
+        
+        # Add some sample artifacts for demonstration
+        artifacts_structure["requirements"] = [
+            {"name": "sample_requirements.md", "type": "Requirements Document", "url": "/artifacts/requirements.md"}
+        ]
+        
+        return {"artifacts": artifacts_structure}
     except Exception as e:
         logger.error(f"Error fetching artifacts: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))

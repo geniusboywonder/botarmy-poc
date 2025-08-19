@@ -45,8 +45,8 @@ const ActionQueue = () => {
       )}
       {!loading.tasks && !error.tasks && (
         <div className="space-y-4 overflow-y-auto">
-          {tasks.length === 0 && <p className="text-gray-500 dark:text-gray-400">No pending actions.</p>}
-          {tasks.map((task) => (
+          {(!Array.isArray(tasks) || tasks.length === 0) && <p className="text-gray-500 dark:text-gray-400">No pending actions.</p>}
+          {Array.isArray(tasks) && tasks.map((task) => (
             <div key={task.id} className="p-4 border rounded-lg border-gray-200 dark:border-gray-700 flex gap-4">
               <div className="flex-shrink-0">{getPriorityIcon(task.priority)}</div>
               <div className="flex-1">

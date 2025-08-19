@@ -20,9 +20,29 @@ export const AppProvider = ({ children }) => {
       setLoading(prev => ({ ...prev, [key]: true }));
       setError(prev => ({ ...prev, [key]: null }));
       const data = await fetcher(); // No longer passing projectId
-      setter(data);
+      
+      // Defensive check to ensure data is valid
+      if (data !== null && data !== undefined) {
+        setter(data);
+      } else {
+        console.warn(`fetchResource: ${key} returned null/undefined data`);
+        // Set appropriate default based on key
+        if (key === 'agents') setter([]);
+        else if (key === 'tasks') setter([]);
+        else if (key === 'messages') setter([]);
+        else if (key === 'logs') setter([]);
+        else if (key === 'artifacts') setter({});
+      }
     } catch (e) {
+      console.error(`fetchResource error for ${key}:`, e);
       setError(prev => ({ ...prev, [key]: e.message }));
+      
+      // Set safe defaults on error
+      if (key === 'agents') setter([]);
+      else if (key === 'tasks') setter([]);
+      else if (key === 'messages') setter([]);
+      else if (key === 'logs') setter([]);
+      else if (key === 'artifacts') setter({});
     } finally {
       setLoading(prev => ({ ...prev, [key]: false }));
     }
