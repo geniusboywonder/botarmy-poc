@@ -25,53 +25,25 @@ from contextlib import asynccontextmanager
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    # Create test project on startup
+    """Application lifespan manager - handles startup and shutdown"""
+    # Create test project on startup without triggering agent processing
     try:
         existing = db.get_project('proj_49583')
         if not existing:
             logger.info("Creating test project...")
             db.create_project_with_id('proj_49583', 'Test Project', 'A test project for development')
             
-            # Add some sample data for testing
-            db.add_message(
-                project_id='proj_49583',
-                from_agent='system',
-                to_agent='analyst', 
-                message_type='info',
-                content={'text': 'System initialized successfully'},
-                confidence=1.0
-            )
-            
-            # Add some sample messages to populate the chat
-            db.add_message(
-                project_id='proj_49583',
-                from_agent='analyst',
-                to_agent='architect', 
-                message_type='handoff',
-                content={'text': 'Requirements analysis complete', 'analysis': 'Sample analysis data'},
-                confidence=0.9
-            )
-            
-            db.add_message(
-                project_id='proj_49583',
-                from_agent='architect',
-                to_agent='developer', 
-                message_type='handoff',
-                content={'text': 'Architecture design ready', 'design': 'Sample design data'},
-                confidence=0.8
-            )
-            
-            # Add a sample task/action for the action queue
+            # Add a sample task/action for the action queue (non-processed)
             conn = sqlite3.connect(db.db_path)
             conn.execute(
                 '''
                 INSERT INTO actions (id, project_id, title, description, priority, options)
                 VALUES (?, ?, ?, ?, ?, ?)
             ''', (str(uuid.uuid4()), 'proj_49583', 
-                  'Review Architecture Design', 
-                  'Please review the proposed system architecture and provide feedback.',
-                  'high', 
-                  json.dumps(['Approve', 'Request Changes', 'Reject']))
+                  'Welcome Task', 
+                  'This is a sample task to demonstrate the interface. Use chat with @agent mentions to interact.',
+                  'low', 
+                  json.dumps(['Acknowledge', 'Dismiss'])))
             )
             conn.commit()
             conn.close()
@@ -80,15 +52,18 @@ async def lifespan(app: FastAPI):
     except Exception as e:
         logger.error(f"Failed to create test project: {str(e)}")
     
-    # Start the background task
-    task = asyncio.create_task(process_message_queue())
-    yield
-    # Clean up the background task
-    task.cancel()
+    # Test OpenAI connection without using quota
     try:
-        await task
-    except asyncio.CancelledError:
-        logger.info("Background task cancelled successfully.")
+        if os.getenv("OPENAI_API_KEY"):
+            logger.info("OpenAI API key detected - Ready for agent interactions")
+        else:
+            logger.warning("No OpenAI API key found - Agents will not function")
+    except Exception as e:
+        logger.error(f"OpenAI connection test failed: {str(e)}")
+    
+    # No automatic background processing - agents only work when called via chat
+    yield
+    # Cleanup (nothing to cancel since no background tasks)
 
 # Initialize components
 app = FastAPI(title="BotArmy POC", version="1.0.0", lifespan=lifespan)
@@ -121,11 +96,11 @@ agents = {
     "tester": MockAgent("tester", llm_client, db),
 }
 
-# Set some initial status for the real agents
+# Set all agents to idle status initially - no auto-processing
 agents["analyst"].status = 'idle'
-agents["analyst"].current_task = 'Waiting for new requirements'
-agents["architect"].status = 'working'
-agents["architect"].current_task = 'Reviewing system architecture'
+agents["analyst"].current_task = 'Ready for instructions'
+agents["architect"].status = 'idle'
+agents["architect"].current_task = 'Ready for instructions'
 
 # Add CORS middleware
 app.add_middleware(
@@ -162,14 +137,14 @@ async def health_check():
 @app.post("/api/projects")
 async def create_project(request: ProjectCreateRequest,
                          background_tasks: BackgroundTasks):
+    """Create new project without triggering automatic agent processing"""
     try:
         project_id = db.create_project(request.name, request.requirements)
 
-        # Start analysis in background
-        background_tasks.add_task(start_agent_workflow, project_id,
-                                  request.requirements)
+        # Do NOT start automatic analysis - agents only respond to chat commands
+        logger.info(f"Project {project_id} created. Use chat with @agent mentions to interact.")
 
-        return {"project_id": project_id, "status": "created"}
+        return {"project_id": project_id, "status": "created", "message": "Use chat with @agent mentions to interact"}
 
     except Exception as e:
         logger.error(f"Failed to create project: {str(e)}")
@@ -411,6 +386,216 @@ async def get_global_logs():
         raise HTTPException(status_code=500, detail=str(e))
 
 
+# Pydantic models for chat functionality
+class ChatMessageRequest(BaseModel):
+    content: str
+    message_type: str
+    target_agent: Optional[str] = None
+    mentioned_agents: List[str] = []
+    project_id: str = 'proj_49583'  # Default project
+
+
+class AgentActionRequest(BaseModel):
+    agent_id: str
+    action: str  # pause, resume, stop
+
+
+# Chat system state
+chat_history = []
+pending_permissions = {}  # Store pending permission requests
+
+
+# Chat API endpoints
+@app.post("/api/chat/send")
+async def send_chat_message(request: ChatMessageRequest):
+    """Send message to agents via chat interface with @mention support"""
+    try:
+        message_id = str(uuid.uuid4())
+        timestamp = datetime.utcnow().isoformat()
+        
+        # Add user message to chat history
+        user_message = {
+            'id': message_id,
+            'type': request.message_type,
+            'content': request.content,
+            'timestamp': timestamp,
+            'fromAgent': 'human',
+            'targetAgent': request.target_agent,
+            'mentionedAgents': request.mentioned_agents
+        }
+        chat_history.append(user_message)
+        
+        # Store in database
+        conn = sqlite3.connect(db.db_path)
+        conn.execute(
+            '''
+            INSERT INTO messages (id, project_id, from_agent, to_agent, message_type, content, status, timestamp)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+        ''', (
+            message_id,
+            request.project_id,
+            'human',
+            request.target_agent or 'system',
+            request.message_type,
+            json.dumps({'text': request.content, 'mentions': request.mentioned_agents}),
+            'sent',
+            timestamp
+        ))
+        conn.commit()
+        conn.close()
+        
+        # If agents are mentioned, process the message
+        if request.target_agent and request.target_agent in agents:
+            agent = agents[request.target_agent]
+            
+            # Check if agent is paused
+            if getattr(agent, 'status', 'idle') == 'paused':
+                response_message = {
+                    'id': str(uuid.uuid4()),
+                    'type': 'agent_response',
+                    'content': f'Agent @{request.target_agent} is currently paused. Use the resume button to continue.',
+                    'timestamp': datetime.utcnow().isoformat(),
+                    'fromAgent': request.target_agent,
+                    'targetAgent': 'human'
+                }
+                chat_history.append(response_message)
+                return {'status': 'delivered', 'agent_paused': True, 'message_id': message_id}
+            
+            # For now, create mock agent responses to demonstrate the system
+            agent_response = await create_mock_agent_response(request.target_agent, request.content)
+            
+            response_message = {
+                'id': str(uuid.uuid4()),
+                'type': 'agent_response',
+                'content': agent_response['content'],
+                'timestamp': datetime.utcnow().isoformat(),
+                'fromAgent': request.target_agent,
+                'targetAgent': 'human'
+            }
+            chat_history.append(response_message)
+            
+            # Update agent status
+            if hasattr(agent, 'status'):
+                agent.status = 'working'
+                agent.current_task = f'Processing: {request.content[:50]}...'
+        
+        return {'status': 'delivered', 'message_id': message_id}
+        
+    except Exception as e:
+        logger.error(f'Error sending chat message: {str(e)}')
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.get("/api/chat/history")
+async def get_chat_history():
+    """Get chat message history"""
+    return {'messages': chat_history}
+
+
+@app.post("/api/agents/action")
+async def agent_action(request: AgentActionRequest):
+    """Pause/Resume/Stop agent"""
+    try:
+        if request.agent_id not in agents:
+            raise HTTPException(status_code=404, detail='Agent not found')
+        
+        agent = agents[request.agent_id]
+        
+        if request.action == 'pause':
+            agent.status = 'paused'
+            agent.current_task = 'Paused by user'
+            message = f'Agent @{request.agent_id} has been paused'
+        elif request.action == 'resume':
+            agent.status = 'idle'
+            agent.current_task = 'Ready for instructions'
+            message = f'Agent @{request.agent_id} has been resumed'
+        elif request.action == 'stop':
+            agent.status = 'idle'
+            agent.current_task = None
+            message = f'Agent @{request.agent_id} has been stopped'
+        else:
+            raise HTTPException(status_code=400, detail='Invalid action')
+        
+        # Add system message to chat
+        system_message = {
+            'id': str(uuid.uuid4()),
+            'type': 'system',
+            'content': message,
+            'timestamp': datetime.utcnow().isoformat(),
+            'fromAgent': 'system',
+            'targetAgent': 'human'
+        }
+        chat_history.append(system_message)
+        
+        return {'status': 'success', 'message': message}
+        
+    except Exception as e:
+        logger.error(f'Error performing agent action: {str(e)}')
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.post("/api/permissions/respond")
+async def respond_to_permission(request_id: str, response: str):
+    """Respond to agent permission request"""
+    try:
+        if request_id not in pending_permissions:
+            raise HTTPException(status_code=404, detail='Permission request not found')
+        
+        permission_request = pending_permissions[request_id]
+        
+        # Create response message
+        response_message = {
+            'id': str(uuid.uuid4()),
+            'type': 'system',
+            'content': f'Permission {response.lower()} for {permission_request["agent_id"]} request: {permission_request["action"]}',
+            'timestamp': datetime.utcnow().isoformat(),
+            'fromAgent': 'system',
+            'targetAgent': 'human'
+        }
+        chat_history.append(response_message)
+        
+        # Remove from pending
+        del pending_permissions[request_id]
+        
+        return {'status': 'success', 'response': response}
+        
+    except Exception as e:
+        logger.error(f'Error responding to permission: {str(e)}')
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+async def create_mock_agent_response(agent_id: str, user_message: str) -> Dict:
+    """Create mock agent responses to demonstrate the system"""
+    responses = {
+        'analyst': {
+            'analyze': 'I\'ll analyze the requirements. May I proceed to review the project scope and create a detailed analysis report?',
+            'default': 'I\'m ready to analyze requirements, user stories, and project scope. What would you like me to examine?'
+        },
+        'architect': {
+            'design': 'I\'ll create the system architecture. Should I start with the high-level design and component breakdown?',
+            'default': 'I can help with system design, architecture patterns, and technical specifications. What do you need?'
+        },
+        'developer': {
+            'implement': 'I\'m ready to start coding. Should I begin with the core functionality or would you like me to focus on a specific module?',
+            'default': 'I can write code, implement features, and handle development tasks. What should I work on?'
+        },
+        'tester': {
+            'test': 'I\'ll create comprehensive tests. Should I start with unit tests or would you prefer integration testing first?',
+            'default': 'I can create test cases, run quality checks, and validate functionality. How can I help?'
+        }
+    }
+    
+    agent_responses = responses.get(agent_id, {'default': f'Agent {agent_id} received your message.'})
+    
+    # Simple keyword matching for response selection
+    user_lower = user_message.lower()
+    for keyword, response in agent_responses.items():
+        if keyword != 'default' and keyword in user_lower:
+            return {'content': response, 'requires_permission': True}
+    
+    return {'content': agent_responses['default'], 'requires_permission': False}
+
+
 @app.get("/api/events")
 async def stream_global_events():
     """Global SSE endpoint for real-time updates"""
@@ -536,75 +721,20 @@ async def stream_updates(project_id: str):
     return StreamingResponse(generate(), media_type="text/plain")
 
 
-# Background task to run agent workflow
-async def start_agent_workflow(project_id: str, requirements: str):
-    """Start the agent workflow for a project"""
-    try:
-        logger.info(f"Starting workflow for project {project_id}")
-
-        # Send initial message to analyst
-        message_id = db.add_message(project_id=project_id,
-                                    from_agent="system",
-                                    to_agent="analyst",
-                                    message_type="start_analysis",
-                                    content={"requirements": requirements},
-                                    confidence=1.0)
-
-        # Process messages in a loop
-        await process_message_queue()
-
-    except Exception as e:
-        logger.error(f"Workflow error: {str(e)}")
+# Disabled automatic workflow - agents only respond to manual chat commands
+# Original function renamed to start_agent_workflow_disabled
+async def start_agent_workflow_disabled(project_id: str, requirements: str):
+    """DISABLED: Original auto-workflow function - agents only respond to chat now"""
+    logger.info(f"Auto-workflow disabled for project {project_id}. Use chat with @agent mentions instead.")
+    # No automatic processing - function exists for compatibility but does nothing
 
 
-async def process_message_queue():
-    """Process pending messages in the queue"""
-    while True:
-        try:
-            # Get pending messages
-            pending_messages = db.get_pending_messages()
-
-            if not pending_messages:
-                await asyncio.sleep(5)  # Wait before checking again
-                continue
-
-            for message in pending_messages:
-                to_agent = message["to_agent"]
-
-                if to_agent in agents:
-                    agent = agents[to_agent]
-
-                    # Mark message as processing
-                    db.update_message_status(message["id"], "processing")
-
-                    # Process message
-                    try:
-                        result = await agent.process_message(message)
-
-                        if result["status"] == "complete":
-                            db.update_message_status(message["id"],
-                                                     "completed")
-                        else:
-                            db.update_message_status(message["id"], "error")
-                            logger.error(
-                                f"Agent {to_agent} failed: {result.get('message', 'Unknown error')}"
-                            )
-
-                    except Exception as e:
-                        logger.error(
-                            f"Error processing message {message['id']}: {str(e)}"
-                        )
-                        db.update_message_status(message["id"], "error")
-
-                else:
-                    logger.warning(f"No agent found for: {to_agent}")
-                    db.update_message_status(message["id"], "error")
-
-            await asyncio.sleep(1)  # Brief pause between processing cycles
-
-        except Exception as e:
-            logger.error(f"Message queue processing error: {str(e)}")
-            await asyncio.sleep(5)
+# Disabled automatic message queue processing 
+# Original function renamed to process_message_queue_disabled
+async def process_message_queue_disabled():
+    """DISABLED: Original message queue processor - replaced with manual chat system"""
+    logger.info("Automatic message queue processing disabled. Use chat interface instead.")
+    # No automatic processing - function exists for compatibility but does nothing
 
 
 # Serve static files (React app)
