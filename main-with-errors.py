@@ -110,27 +110,22 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-
 # Pydantic models for API requests
 class ProjectCreateRequest(BaseModel):
     name: str
     requirements: str
 
-
 class ActionResponseRequest(BaseModel):
     action_id: str
     response: str
 
-
 # Global state for SSE connections
 sse_connections = {}
-
 
 # Health check endpoint
 @app.get("/health")
 async def health_check():
     return {"status": "healthy", "timestamp": datetime.utcnow()}
-
 
 # Create new project
 @app.post("/api/projects")
@@ -149,7 +144,6 @@ async def create_project(request: ProjectCreateRequest,
         logger.error(f"Failed to create project: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
 
-
 # Get project details
 @app.get("/api/projects/{project_id}")
 async def get_project(project_id: str):
@@ -158,7 +152,6 @@ async def get_project(project_id: str):
         raise HTTPException(status_code=404, detail="Project not found")
 
     return project
-
 
 # Get project messages
 @app.get("/api/projects/{project_id}/messages")
@@ -186,7 +179,6 @@ async def get_messages(project_id: str, limit: int = 50):
     conn.close()
     return {"messages": messages}
 
-
 # Get pending actions for human intervention
 @app.get("/api/projects/{project_id}/actions")
 async def get_actions(project_id: str):
@@ -211,7 +203,6 @@ async def get_actions(project_id: str):
     conn.close()
     return {"actions": actions}
 
-
 # Submit human action response
 @app.post("/api/actions/respond")
 async def respond_to_action(request: ActionResponseRequest):
@@ -227,7 +218,6 @@ async def respond_to_action(request: ActionResponseRequest):
     conn.close()
 
     return {"status": "resolved"}
-
 
 # Global API Endpoints for Frontend Integration
 @app.get("/api/agents")
@@ -257,7 +247,6 @@ async def get_agents():
     except Exception as e:
         logger.error(f"Error fetching agents: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
-
 
 @app.get("/api/tasks")  
 async def get_global_tasks():
@@ -295,7 +284,6 @@ async def get_global_tasks():
         logger.error(f"Error fetching tasks: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
 
-
 @app.get("/api/artifacts")
 async def get_global_artifacts():
     """Get artifacts across all projects - Global endpoint for frontend"""
@@ -322,7 +310,6 @@ async def get_global_artifacts():
     except Exception as e:
         logger.error(f"Error fetching artifacts: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
-
 
 @app.get("/api/messages")
 async def get_global_messages():
@@ -360,7 +347,6 @@ async def get_global_messages():
         logger.error(f"Error fetching messages: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
 
-
 @app.get("/api/logs")
 async def get_global_logs():
     """Get system logs - Global endpoint for frontend"""
@@ -392,7 +378,6 @@ async def get_global_logs():
         logger.error(f"Error fetching logs: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
 
-
 # Pydantic models for chat functionality
 class ChatMessageRequest(BaseModel):
     content: str
@@ -401,16 +386,13 @@ class ChatMessageRequest(BaseModel):
     mentioned_agents: List[str] = []
     project_id: str = 'proj_49583'  # Default project
 
-
 class AgentActionRequest(BaseModel):
     agent_id: str
     action: str  # pause, resume, stop
 
-
 # Chat system state
 chat_history = []
 pending_permissions = {}  # Store pending permission requests
-
 
 # Chat API endpoints
 @app.post("/api/chat/send")
@@ -492,12 +474,10 @@ async def send_chat_message(request: ChatMessageRequest):
         logger.error(f'Error sending chat message: {str(e)}')
         raise HTTPException(status_code=500, detail=str(e))
 
-
 @app.get("/api/chat/history")
 async def get_chat_history():
     """Get chat message history"""
     return {'messages': chat_history}
-
 
 @app.post("/api/agents/action")
 async def agent_action(request: AgentActionRequest):
@@ -540,7 +520,6 @@ async def agent_action(request: AgentActionRequest):
         logger.error(f'Error performing agent action: {str(e)}')
         raise HTTPException(status_code=500, detail=str(e))
 
-
 @app.post("/api/permissions/respond")
 async def respond_to_permission(request_id: str, response: str):
     """Respond to agent permission request"""
@@ -569,7 +548,6 @@ async def respond_to_permission(request_id: str, response: str):
     except Exception as e:
         logger.error(f'Error responding to permission: {str(e)}')
         raise HTTPException(status_code=500, detail=str(e))
-
 
 async def create_mock_agent_response(agent_id: str, user_message: str) -> Dict:
     """Create mock agent responses to demonstrate the system"""
@@ -601,7 +579,6 @@ async def create_mock_agent_response(agent_id: str, user_message: str) -> Dict:
             return {'content': response, 'requires_permission': True}
     
     return {'content': agent_responses['default'], 'requires_permission': False}
-
 
 @app.get("/api/events")
 async def stream_global_events():
@@ -647,11 +624,8 @@ async def stream_global_events():
     
     return StreamingResponse(generate(), media_type="text/plain")
 
-
-# Server-Sent Events endpoint for real-time updates
 @app.get("/api/stream/{project_id}")
 async def stream_updates(project_id: str):
-
     async def generate():
         # Send initial connection message
         yield f"data: {json.dumps({'type': 'connected', 'timestamp': datetime.utcnow().isoformat()})}\n\n"
@@ -727,22 +701,16 @@ async def stream_updates(project_id: str):
 
     return StreamingResponse(generate(), media_type="text/plain")
 
-
 # Disabled automatic workflow - agents only respond to manual chat commands
-# Original function renamed to start_agent_workflow_disabled
 async def start_agent_workflow_disabled(project_id: str, requirements: str):
     """DISABLED: Original auto-workflow function - agents only respond to chat now"""
     logger.info(f"Auto-workflow disabled for project {project_id}. Use chat with @agent mentions instead.")
     # No automatic processing - function exists for compatibility but does nothing
 
-
-# Disabled automatic message queue processing 
-# Original function renamed to process_message_queue_disabled
 async def process_message_queue_disabled():
     """DISABLED: Original message queue processor - replaced with manual chat system"""
     logger.info("Automatic message queue processing disabled. Use chat interface instead.")
     # No automatic processing - function exists for compatibility but does nothing
-
 
 # Serve static files (React app)
 app.mount("/", StaticFiles(directory="static", html=True), name="static")
