@@ -9,8 +9,12 @@ logger = logging.getLogger(__name__)
 
 class LLMClient:
 
-    def __init__(self, api_key: str):
-        self.client = AsyncOpenAI(api_key=api_key)
+    def __init__(self, api_key: Optional[str] = None):
+        if api_key:
+            self.client = AsyncOpenAI(api_key=api_key)
+        else:
+            self.client = None
+            logger.warning("OpenAI API key not provided. LLMClient will be disabled.")
         self.model = "gpt-4o-mini"
         self.max_retries = 3
         self.base_delay = 1.0
@@ -21,6 +25,13 @@ class LLMClient:
                                 temperature: float = 0.3,
                                 max_tokens: int = 2000) -> Dict:
         """Generate response from LLM with retry logic"""
+        if not self.client:
+            return {
+                "content": "LLM client is not configured.",
+                "tokens_used": 0,
+                "success": False,
+                "error": "API key not provided."
+            }
 
         messages = []
         if system_prompt:

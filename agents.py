@@ -1,5 +1,7 @@
 import asyncio
 import json
+import sqlite3
+import uuid
 from abc import ABC, abstractmethod
 from typing import Dict, List, Optional
 from database import DatabaseManager
