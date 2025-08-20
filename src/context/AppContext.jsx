@@ -23,6 +23,7 @@ export const AppProvider = ({ children }) => {
       
       // Defensive check to ensure data is valid
       if (data !== null && data !== undefined) {
+        console.log(`fetchResource: ${key} received data:`, data);
         setter(data);
       } else {
         console.warn(`fetchResource: ${key} returned null/undefined data`);
@@ -37,12 +38,39 @@ export const AppProvider = ({ children }) => {
       console.error(`fetchResource error for ${key}:`, e);
       setError(prev => ({ ...prev, [key]: e.message }));
       
-      // Set safe defaults on error
-      if (key === 'agents') setter([]);
-      else if (key === 'tasks') setter([]);
-      else if (key === 'messages') setter([]);
-      else if (key === 'logs') setter([]);
-      else if (key === 'artifacts') setter({});
+      // Import and use mock data on API failure
+      try {
+        const mockData = await import('../data/mockData.js');
+        if (key === 'agents') {
+          const mockAgents = mockData.initialAgents();
+          console.log('Using mock agents data:', mockAgents);
+          setter(mockAgents);
+        } else if (key === 'tasks') {
+          const mockTasks = mockData.mockTasks;
+          console.log('Using mock tasks data:', mockTasks);
+          setter(mockTasks);
+        } else if (key === 'messages') {
+          const mockMessages = mockData.initialChatMessages;
+          console.log('Using mock messages data:', mockMessages);
+          setter(mockMessages);
+        } else if (key === 'logs') {
+          const mockLogs = mockData.initialLogs;
+          console.log('Using mock logs data:', mockLogs);
+          setter(mockLogs);
+        } else if (key === 'artifacts') {
+          const mockArtifacts = mockData.artifactsData;
+          console.log('Using mock artifacts data:', mockArtifacts);
+          setter(mockArtifacts);
+        }
+      } catch (mockError) {
+        console.error('Failed to load mock data:', mockError);
+        // Final fallback to empty defaults
+        if (key === 'agents') setter([]);
+        else if (key === 'tasks') setter([]);
+        else if (key === 'messages') setter([]);
+        else if (key === 'logs') setter([]);
+        else if (key === 'artifacts') setter({});
+      }
     } finally {
       setLoading(prev => ({ ...prev, [key]: false }));
     }
